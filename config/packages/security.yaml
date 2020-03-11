@@ -1,0 +1,44 @@
+security:
+    encoders:
+        App\Entity\User:
+            algorithm: auto
+        App\Entity\Partenaire:
+            algorithm: auto
+
+
+    # https://symfony.com/doc/current/security.html#where-do-users-come-from-user-providers
+    providers:
+        # used to reload user from session & other features (e.g. switch_user)
+        user_provider:
+                entity: {class: App\Entity\User, property: email}
+
+        partenaire_provider:
+            entity: {class: App\Entity\Partenaire, property: email} 
+        
+        all_users:
+            chain:
+                providers: [user_provider, partenaire_provider]
+        # used to reload user from session & other features (e.g. switch_user)
+    firewalls:
+                login:
+                    pattern:  ^/api/login
+                    stateless: true
+                    anonymous: true
+                    user_checker: App\Security\UserChecker
+                    json_login:
+                        provider: all_users
+                        check_path:               /api/login_check
+                        success_handler:          lexik_jwt_authentication.handler.authentication_success
+                        failure_handler:          lexik_jwt_authentication.handler.authentication_failure
+
+                api:
+                    pattern:   ^/api/
+                    stateless: true
+                    guard:
+                        provider: all_users
+                        authenticators:
+                            - lexik_jwt_authentication.jwt_token_authenticator
+
+    access_control:
+        - { path: ^/api/login, roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: ^/api,       roles: IS_AUTHENTICATED_FULLY }
